@@ -1,0 +1,181 @@
+{
+  "components": {
+    "comp-compute-average-op": {
+      "executorLabel": "exec-compute-average-op",
+      "inputDefinitions": {
+        "parameters": {
+          "data": {
+            "parameterType": "LIST"
+          }
+        }
+      },
+      "outputDefinitions": {
+        "parameters": {
+          "Output": {
+            "parameterType": "NUMBER_DOUBLE"
+          }
+        }
+      }
+    },
+    "comp-read-data-op": {
+      "executorLabel": "exec-read-data-op",
+      "outputDefinitions": {
+        "parameters": {
+          "Output": {
+            "parameterType": "LIST"
+          }
+        }
+      }
+    },
+    "comp-save-result-op": {
+      "executorLabel": "exec-save-result-op",
+      "inputDefinitions": {
+        "parameters": {
+          "filename": {
+            "defaultValue": "result.txt",
+            "isOptional": true,
+            "parameterType": "STRING"
+          },
+          "value": {
+            "parameterType": "NUMBER_DOUBLE"
+          }
+        }
+      }
+    }
+  },
+  "deploymentSpec": {
+    "executors": {
+      "exec-compute-average-op": {
+        "container": {
+          "args": [
+            "--executor_input",
+            "{{$}}",
+            "--function_to_execute",
+            "compute_average_op"
+          ],
+          "command": [
+            "sh",
+            "-c",
+            "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip || python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet --no-warn-script-location 'kfp==2.4.0' '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"' && \"$0\" \"$@\"\n",
+            "sh",
+            "-ec",
+            "program_path=$(mktemp -d)\n\nprintf \"%s\" \"$0\" > \"$program_path/ephemeral_component.py\"\n_KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         \"$program_path/ephemeral_component.py\"                         \"$@\"\n",
+            "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import *\n\ndef compute_average_op(data: list) -> float:\n    return sum(data) / len(data)\n\n"
+          ],
+          "image": "python:3.7"
+        }
+      },
+      "exec-read-data-op": {
+        "container": {
+          "args": [
+            "--executor_input",
+            "{{$}}",
+            "--function_to_execute",
+            "read_data_op"
+          ],
+          "command": [
+            "sh",
+            "-c",
+            "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip || python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet --no-warn-script-location 'kfp==2.4.0' '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"' && \"$0\" \"$@\"\n",
+            "sh",
+            "-ec",
+            "program_path=$(mktemp -d)\n\nprintf \"%s\" \"$0\" > \"$program_path/ephemeral_component.py\"\n_KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         \"$program_path/ephemeral_component.py\"                         \"$@\"\n",
+            "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import *\n\ndef read_data_op() -> list:\n    data = [1, 2, 3, 4]\n    return data\n\n"
+          ],
+          "image": "python:3.7"
+        }
+      },
+      "exec-save-result-op": {
+        "container": {
+          "args": [
+            "--executor_input",
+            "{{$}}",
+            "--function_to_execute",
+            "save_result_op"
+          ],
+          "command": [
+            "sh",
+            "-c",
+            "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip || python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet --no-warn-script-location 'kfp==2.4.0' '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"' && \"$0\" \"$@\"\n",
+            "sh",
+            "-ec",
+            "program_path=$(mktemp -d)\n\nprintf \"%s\" \"$0\" > \"$program_path/ephemeral_component.py\"\n_KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         \"$program_path/ephemeral_component.py\"                         \"$@\"\n",
+            "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import *\n\ndef save_result_op(value: float, filename: str = 'result.txt'):\n    with open(filename, \"w\") as f:\n        f.write(str(value))\n\n"
+          ],
+          "image": "python:3.7"
+        }
+      }
+    }
+  },
+  "pipelineInfo": {
+    "description": "A simple pipelines that computes average of array",
+    "name": "my-first-pipeline"
+  },
+  "root": {
+    "dag": {
+      "tasks": {
+        "compute-average-op": {
+          "cachingOptions": {
+            "enableCache": true
+          },
+          "componentRef": {
+            "name": "comp-compute-average-op"
+          },
+          "dependentTasks": [
+            "read-data-op"
+          ],
+          "inputs": {
+            "parameters": {
+              "data": {
+                "taskOutputParameter": {
+                  "outputParameterKey": "Output",
+                  "producerTask": "read-data-op"
+                }
+              }
+            }
+          },
+          "taskInfo": {
+            "name": "compute-average-op"
+          }
+        },
+        "read-data-op": {
+          "cachingOptions": {
+            "enableCache": true
+          },
+          "componentRef": {
+            "name": "comp-read-data-op"
+          },
+          "taskInfo": {
+            "name": "read-data-op"
+          }
+        },
+        "save-result-op": {
+          "cachingOptions": {
+            "enableCache": true
+          },
+          "componentRef": {
+            "name": "comp-save-result-op"
+          },
+          "dependentTasks": [
+            "compute-average-op"
+          ],
+          "inputs": {
+            "parameters": {
+              "value": {
+                "taskOutputParameter": {
+                  "outputParameterKey": "Output",
+                  "producerTask": "compute-average-op"
+                }
+              }
+            }
+          },
+          "taskInfo": {
+            "name": "save-result-op"
+          }
+        }
+      }
+    }
+  },
+  "schemaVersion": "2.1.0",
+  "sdkVersion": "kfp-2.4.0"
+}
